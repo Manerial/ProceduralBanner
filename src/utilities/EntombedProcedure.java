@@ -6,6 +6,10 @@ public class EntombedProcedure {
 	private Boolean[][] charList;
 	private int[] randomSelector = new int[32];
 	private int sleep;
+	private static final char BLACK_CHAR = (char)219;
+	
+	// 0 = false = pas de mur
+	// 1 = true = mur
 
 	public EntombedProcedure(int lines, int columns, int sleep, String seed) {
 		this.sleep = sleep;
@@ -20,14 +24,20 @@ public class EntombedProcedure {
 
 	public boolean getNextCell(int line, int column) {
 		try {
-			Boolean[] booleanList = new Boolean[5];
-			booleanList[0] = charList[line][column - 2];
-			booleanList[1] = charList[line][column - 1];
-			booleanList[2] = charList[line - 1][column - 1];
-			booleanList[3] = charList[line - 1][column];
-			booleanList[4] = charList[line - 1][column + 1];
-			int boolList = boolListToInt(booleanList);
-			switch(randomSelector[boolList]) {
+			// Current cell = X
+			
+			// sTile = 
+			//   2 3 4
+			// 0 1 X
+			
+			Boolean[] sTile = new Boolean[5];
+			sTile[0] = charList[line][column - 2];
+			sTile[1] = charList[line][column - 1];
+			sTile[2] = charList[line - 1][column - 1];
+			sTile[3] = charList[line - 1][column];
+			sTile[4] = charList[line - 1][column + 1];
+			int index = getSTileSelectorIndex(sTile);
+			switch(randomSelector[index]) {
 			case 0:
 				return false;
 			case 1:
@@ -36,22 +46,29 @@ public class EntombedProcedure {
 				return Math.random() > 0.5;
 			}
 		} catch (Exception e) {
-			return false;
+			if(column == 0) {
+				return true;
+			} else if (column == 1 && line > 0) {
+				return false;
+			} else {
+				return Math.random() > 0.5;
+			}
 		}
 	}
 
-	public int boolListToInt(Boolean[] booleanList) {
-		int boolInt = 0;
-		for(int i = 0; i < booleanList.length; i++) {
-			boolInt += (booleanList[4-i]) ? Math.pow(2, i) : 0;
+	public int getSTileSelectorIndex(Boolean[] sTile) {
+		int index = 0;
+		for(int i = 0; i < sTile.length; i++) {
+			boolean curentCellIsWall = sTile[i];
+			index += (curentCellIsWall) ? Math.pow(2, 4-i) : 0;
 		}
-		return boolInt;
+		return index;
 	}
 
 	public void printCharList() {
 		for(int line = 0; line < charList.length; line++) {
-			for(int column = 0; column < charList[line].length - 1; column++) {
-				System.out.print((charList[line][column]) ? " " : (char)219);
+			for(int column = 0; column < charList[line].length; column++) {
+				printWall(line, column);
 			}
 			System.out.println(line);
 			sleep();
@@ -60,24 +77,32 @@ public class EntombedProcedure {
 
 	public void printCharListRevert() {
 		for(int line = 0; line < charList.length; line++) {
-			for(int column = 0; column < charList[line].length - 1; column++) {
-				System.out.print((charList[line][column]) ? " " : (char)219);
+			for(int column = 0; column < charList[line].length; column++) {
+				printWall(line, column);
 			}
-			for(int column = charList[line].length - 2; column >= 0; column--) {
-				System.out.print((charList[line][column]) ? " " : (char)219);
+			for(int column = charList[line].length - 1; column >= 0; column--) {
+				printWall(line, column);
 			}
 			System.out.println(line);
 			sleep();
 		}
-		for(int column = 0; column < charList[0].length * 2 - 2; column++) {
-			System.out.print((char)219);
+		for(int column = 0; column < charList[0].length * 2; column++) {
+			System.out.print(BLACK_CHAR);
+		}
+	}
+
+	private void printWall(int line, int column) {
+		if(column == 1) {
+			System.out.print(BLACK_CHAR);
+		} else {			
+			System.out.print((charList[line][column]) ? BLACK_CHAR : " ");
 		}
 	}
 
 	private void sleep() {
-		if(sleep > 20) {
+		if(sleep >= 20 && sleep <= 200) {
 			try {
-				TimeUnit.MILLISECONDS.sleep(80);
+				TimeUnit.MILLISECONDS.sleep(sleep);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -85,6 +110,7 @@ public class EntombedProcedure {
 	}
 
 	public void printRandomSelector() {
+		System.out.println();
 		for(int line = 0; line < randomSelector.length; line++) {
 			System.out.print(randomSelector[line]);
 		}
@@ -99,13 +125,12 @@ public class EntombedProcedure {
 	private void generateRandomSelector() {
 		for(int line = 0; line < randomSelector.length; line++) {
 			double rand = Math.random();
-			// Si premier bit = 1 : ecran blanc
-			if(rand < 0.5 && line > 0) {
+			if(rand < 0.4) {
 				randomSelector[line] = 0;
 			} else if (rand < 0.8) {
 				randomSelector[line] = 1;
 			} else {
-				randomSelector[line] = 1;
+				randomSelector[line] = 2;
 			}
 		}
 	}
